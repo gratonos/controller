@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -12,30 +11,30 @@ import (
 func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
 	expr, err := parser.ParseExpr(cmd)
 	if err != nil {
-		printError(wt, err)
+		printError(wt, err.Error())
 		return
 	}
 
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
-		printError(wt, errors.New("call !ok"))
+		printError(wt, "call !ok")
 		return
 	}
 
 	ident, ok := call.Fun.(*ast.Ident)
 	if !ok {
-		printError(wt, errors.New("ident !ok"))
+		printError(wt, "ident !ok")
 		return
 	}
 
 	meta, ok := ctrl.funcs[ident.Name]
 	if !ok {
-		printError(wt, errors.New("meta !ok"))
+		printError(wt, "meta !ok")
 		return
 	}
 
 	if len(meta.in) != len(call.Args) {
-		printError(wt, errors.New("in !ok"))
+		printError(wt, "in !ok")
 		return
 	}
 
@@ -43,7 +42,7 @@ func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
 	for i := 0; i < len(meta.in); i++ {
 		arg, err := parserMap[meta.in[i].Kind()](call.Args[i])
 		if err != nil {
-			printError(wt, err)
+			printError(wt, err.Error())
 			return
 		}
 		args = append(args, arg)
@@ -52,8 +51,8 @@ func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
 	printResult(wt, meta.fn.Call(args))
 }
 
-func printError(wt io.Writer, err error) {
-	fmt.Fprintln(wt, err)
+func printError(wt io.Writer, msg string) {
+	fmt.Fprintln(wt, msg)
 }
 
 func printResult(wt io.Writer, results []reflect.Value) {
