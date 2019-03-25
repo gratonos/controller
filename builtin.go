@@ -23,24 +23,25 @@ func (ctrl *Controller) handleBuiltin(cmd string, wt io.Writer) {
 	case strings.HasPrefix(cmd, "-list"):
 		ctrl.handleList(wt, strings.Fields(cmd)[1:])
 	default:
-		printError(wt, "unsupported command")
+		printError(wt, fmt.Sprintf("unsupported command '%s'", cmd))
 	}
 }
 
 func (ctrl *Controller) handleList(wt io.Writer, args []string) {
 	argc := len(args)
 	if argc > 1 {
-		printError(wt, "-list: too many arguments")
+		printError(wt, fmt.Sprintf("-list: too many arguments, want 0 or 1, have %d", argc))
 		return
 	}
 
-	exp := ""
+	arg, exp := "", ""
 	if argc == 1 {
-		exp = "(?i)" + strings.Replace(args[0], "*", ".*", -1)
+		arg = args[0]
+		exp = `(?i)\b` + strings.Replace(arg, "*", ".*", -1) + `\b`
 	}
 	reg, err := regexp.Compile(exp)
 	if err != nil {
-		printError(wt, "-list: invalid argument")
+		printError(wt, fmt.Sprintf("-list: invalid argument '%s'", arg))
 		return
 	}
 
@@ -54,6 +55,14 @@ func (ctrl *Controller) handleList(wt io.Writer, args []string) {
 	sort.Strings(names)
 
 	ctrl.listFunctions(wt, names)
+
+	if len(names) == 0 {
+		if argc == 0 {
+			printError(wt, "-list: no registered functions")
+		} else {
+			printError(wt, fmt.Sprintf("-list: function '%s' not found", arg))
+		}
+	}
 }
 
 func (ctrl *Controller) listFunctions(wt io.Writer, names []string) {
@@ -63,8 +72,4 @@ func (ctrl *Controller) listFunctions(wt io.Writer, names []string) {
 		fmt.Fprintf(tw, "%s\t%s\t// %s\n", meta.name, meta.fn.Type(), meta.desc)
 	}
 	tw.Flush()
-
-	if len(names) == 0 {
-		printError(wt, "-list: function not found")
-	}
 }
