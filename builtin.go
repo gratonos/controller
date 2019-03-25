@@ -10,15 +10,16 @@ import (
 )
 
 func prompt(wt io.Writer) {
-	fmt.Fprintln(wt, "type '-list [name]' to show registered functions "+
-		"(case insensitive, wildcard '*' supported)")
+	msg := "type '-list [name]' to show registered functions " +
+		"(case insensitive, wildcard '*' supported)"
+	fmt.Fprintln(wt, colorize(msg, green))
 }
 
 func builtin(cmd string) bool {
 	return strings.HasPrefix(cmd, "-")
 }
 
-func (ctrl *Controller) handleBuiltin(cmd string, wt io.Writer) {
+func (ctrl *Controller) handleBuiltin(wt io.Writer, cmd string) {
 	switch {
 	case strings.HasPrefix(cmd, "-list"):
 		ctrl.handleList(wt, strings.Fields(cmd)[1:])
@@ -69,7 +70,8 @@ func (ctrl *Controller) listFunctions(wt io.Writer, names []string) {
 	tw := tabwriter.NewWriter(wt, 0, 0, 4, ' ', 0)
 	for _, name := range names {
 		meta := ctrl.funcs[name]
-		fmt.Fprintf(tw, "%s\t%s\t// %s\n", meta.name, meta.fn.Type(), meta.desc)
+		output := fmt.Sprintf("%s\t%v\t// %s", meta.name, meta.fn.Type(), meta.desc)
+		fmt.Fprintln(tw, colorize(output, green))
 	}
 	tw.Flush()
 }

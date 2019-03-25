@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
+func (ctrl *Controller) handleFuncCall(wt io.Writer, cmd string) {
 	fn, args, err := ctrl.parseExpr(cmd)
 	if err != nil {
 		printError(wt, err.Error())
@@ -54,15 +54,20 @@ func (ctrl *Controller) parseExpr(cmd string) (fn reflect.Value, args []reflect.
 }
 
 func printError(wt io.Writer, msg string) {
-	fmt.Fprintln(wt, msg)
+	fmt.Fprintln(wt, colorize(msg, red))
 }
 
 func printResult(wt io.Writer, results []reflect.Value) {
+	color := green
+	if hasError(results) {
+		color = red
+	}
 	for i, result := range results {
-		fmt.Fprintf(wt, "[%d] %v: %v\n", i, result.Type(), result)
+		output := fmt.Sprintf("[%d] %v: %v", i, result.Type(), result)
+		fmt.Fprintln(wt, colorize(output, color))
 	}
 	if len(results) == 0 {
-		fmt.Fprintln(wt, "<void>")
+		fmt.Fprintln(wt, colorize("<void>", green))
 	}
 }
 

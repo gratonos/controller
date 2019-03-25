@@ -75,9 +75,9 @@ func (ctrl *Controller) Serve(rw io.ReadWriter) error {
 		ctrl.rwlock.RLock() // todo
 
 		if builtin(cmd) {
-			ctrl.handleBuiltin(cmd, rw)
+			ctrl.handleBuiltin(rw, cmd)
 		} else {
-			ctrl.handleFuncCall(cmd, rw)
+			ctrl.handleFuncCall(rw, cmd)
 		}
 
 		ctrl.rwlock.RUnlock()
