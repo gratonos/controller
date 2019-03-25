@@ -14,25 +14,21 @@ func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
 		printError(wt, err.Error())
 		return
 	}
-
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
 		printError(wt, "call !ok")
 		return
 	}
-
 	ident, ok := call.Fun.(*ast.Ident)
 	if !ok {
 		printError(wt, "ident !ok")
 		return
 	}
-
 	meta, ok := ctrl.funcs[ident.Name]
 	if !ok {
 		printError(wt, "meta !ok")
 		return
 	}
-
 	if len(meta.in) != len(call.Args) {
 		printError(wt, "in !ok")
 		return
@@ -40,7 +36,8 @@ func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
 
 	var args []reflect.Value
 	for i := 0; i < len(meta.in); i++ {
-		arg, err := parserMap[meta.in[i].Kind()](call.Args[i])
+		text := cmd[call.Args[i].Pos()-1 : call.Args[i].End()-1]
+		arg, err := parseArg(text, meta.in[i])
 		if err != nil {
 			printError(wt, err.Error())
 			return

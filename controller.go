@@ -94,9 +94,8 @@ func genFuncMeta(fn interface{}, name, desc string) (*funcMeta, error) {
 	var in []reflect.Type
 	for i := 0; i < typ.NumIn(); i++ {
 		inType := typ.In(i)
-		if !checkType(inType.Kind()) {
-			return nil, errors.New("supported parameter types are bool, int64, " +
-				"uint64, float64 and string")
+		if err := checkType(inType.Kind()); err != nil {
+			return nil, err
 		}
 		in = append(in, inType)
 	}
@@ -117,11 +116,16 @@ func genFuncMeta(fn interface{}, name, desc string) (*funcMeta, error) {
 	return meta, nil
 }
 
-func checkType(kind reflect.Kind) bool {
+func checkType(kind reflect.Kind) error {
 	switch kind {
-	case reflect.Bool, reflect.Int64, reflect.Uint64, reflect.Float64, reflect.String:
-		return true
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64,
+		reflect.String:
+		return nil
 	default:
-		return false
+		return errors.New("supported parameter types are bool, integers, " +
+			"floats, string and their compatible custom types")
 	}
 }
