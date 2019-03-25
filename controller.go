@@ -34,7 +34,7 @@ func New() *Controller {
 }
 
 func (ctrl *Controller) Register(fn interface{}, name, desc string) error {
-	errfn := genErrFunc("Register")
+	errfn := errFunc("Register")
 
 	if fn == nil {
 		return errfn("fn must not be nil")

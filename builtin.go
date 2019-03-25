@@ -66,7 +66,7 @@ func (ctrl *Controller) handleList(wt io.Writer, args []string) {
 }
 
 func (ctrl *Controller) listFunctions(wt io.Writer, names []string) {
-	tw := tabwriter.NewWriter(wt, 0, 0, 2, ' ', 0)
+	tw := tabwriter.NewWriter(wt, 0, 0, 4, ' ', 0)
 	for _, name := range names {
 		meta := ctrl.funcs[name]
 		fmt.Fprintf(tw, "%s\t%s\t// %s\n", meta.name, meta.fn.Type(), meta.desc)

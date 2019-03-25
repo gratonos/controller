@@ -9,43 +9,48 @@ import (
 )
 
 func (ctrl *Controller) handleFuncCall(cmd string, wt io.Writer) {
-	expr, err := parser.ParseExpr(cmd)
+	fn, args, err := ctrl.parseExpr(cmd)
 	if err != nil {
 		printError(wt, err.Error())
 		return
 	}
+
+	printResult(wt, fn.Call(args))
+}
+
+func (ctrl *Controller) parseExpr(cmd string) (fn reflect.Value, args []reflect.Value, err error) {
+	expr, err := parser.ParseExpr(cmd)
+	if err != nil {
+		return parseError(fmt.Sprintf("parse: '%s' is not a valid expression", cmd))
+	}
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
-		printError(wt, "call !ok")
-		return
+		return parseError(fmt.Sprintf("parse: '%s' is not a function call expression", cmd))
 	}
 	ident, ok := call.Fun.(*ast.Ident)
 	if !ok {
-		printError(wt, "ident !ok")
-		return
+		return parseError(fmt.Sprintf("parse: '%s' is not a valid function call expression", cmd))
 	}
 	meta, ok := ctrl.funcs[ident.Name]
 	if !ok {
-		printError(wt, "meta !ok")
-		return
+		return parseError(fmt.Sprintf("parse: function '%s' is not registered", ident.Name))
 	}
 	if len(meta.in) != len(call.Args) {
-		printError(wt, "in !ok")
-		return
+		return parseError(fmt.Sprintf("parse: unmatched argument count, want %d, have %d",
+			len(meta.in), len(call.Args)))
 	}
 
-	var args []reflect.Value
 	for i := 0; i < len(meta.in); i++ {
 		text := cmd[call.Args[i].Pos()-1 : call.Args[i].End()-1]
 		arg, err := parseArg(text, meta.in[i])
 		if err != nil {
-			printError(wt, err.Error())
-			return
+			return parseError(fmt.Sprintf("parse: argument[%d] '%s' is not a valid "+
+				"literal of type %v", i, text, meta.in[i]))
 		}
 		args = append(args, arg)
 	}
 
-	printResult(wt, meta.fn.Call(args))
+	return meta.fn, args, nil
 }
 
 func printError(wt io.Writer, msg string) {
@@ -53,8 +58,11 @@ func printError(wt io.Writer, msg string) {
 }
 
 func printResult(wt io.Writer, results []reflect.Value) {
-	for _, result := range results {
-		fmt.Fprintln(wt, result)
+	for i, result := range results {
+		fmt.Fprintf(wt, "[%d] %v: %v\n", i, result.Type(), result)
+	}
+	if len(results) == 0 {
+		fmt.Fprintln(wt, "<void>")
 	}
 }
 
