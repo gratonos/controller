@@ -2,9 +2,46 @@ package controller
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
 	"reflect"
 	"strconv"
 )
+
+func (ctrl *Controller) parseExpr(cmd string) (fn reflect.Value, args []reflect.Value, err error) {
+	expr, err := parser.ParseExpr(cmd)
+	if err != nil {
+		return parseError(fmt.Sprintf("parse: '%s' is not a valid expression", cmd))
+	}
+	call, ok := expr.(*ast.CallExpr)
+	if !ok {
+		return parseError(fmt.Sprintf("parse: '%s' is not a function call expression", cmd))
+	}
+	ident, ok := call.Fun.(*ast.Ident)
+	if !ok {
+		return parseError(fmt.Sprintf("parse: '%s' is not a valid function call expression", cmd))
+	}
+	meta, ok := ctrl.funcs[ident.Name]
+	if !ok {
+		return parseError(fmt.Sprintf("parse: function '%s' is not registered", ident.Name))
+	}
+	if len(meta.in) != len(call.Args) {
+		return parseError(fmt.Sprintf("parse: unmatched argument count, want %d, have %d",
+			len(meta.in), len(call.Args)))
+	}
+
+	for i := 0; i < len(meta.in); i++ {
+		text := cmd[call.Args[i].Pos()-1 : call.Args[i].End()-1]
+		arg, err := parseArg(text, meta.in[i])
+		if err != nil {
+			return parseError(fmt.Sprintf("parse: argument[%d] '%s' is not a valid "+
+				"literal of type %v", i, text, meta.in[i]))
+		}
+		args = append(args, arg)
+	}
+
+	return meta.fn, args, nil
+}
 
 func parseArg(text string, expectedType reflect.Type) (reflect.Value, error) {
 	var value interface{}

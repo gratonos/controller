@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
 	"io"
 	"reflect"
 	"strings"
@@ -59,6 +61,14 @@ func (ctrl *Controller) register(fn interface{}, name, desc string) error {
 	}
 	if name == "" {
 		return errors.New("name must not be empty")
+	}
+	expr, err := parser.ParseExpr(name)
+	if err != nil {
+		return errors.New("name is invalid")
+	}
+	_, ok := expr.(*ast.Ident)
+	if !ok {
+		return errors.New("name is not a valid identity")
 	}
 	meta, err := genFuncMeta(fn, name, desc)
 	if err != nil {
