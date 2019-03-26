@@ -6,9 +6,9 @@ import (
 	"reflect"
 )
 
-func errFunc(name string) func(string) error {
-	return func(err string) error {
-		return fmt.Errorf("controller.%s: %s", name, err)
+func errFunc(name string) func(interface{}) error {
+	return func(err interface{}) error {
+		return fmt.Errorf("controller.%s: %v", name, err)
 	}
 }
 

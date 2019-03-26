@@ -34,37 +34,50 @@ func New() *Controller {
 }
 
 func (ctrl *Controller) Register(fn interface{}, name, desc string) error {
-	errfn := errFunc("Register")
+	if err := ctrl.register(fn, name, desc); err != nil {
+		return errFunc("Register")(err)
+	}
+	return nil
+}
 
+func (ctrl *Controller) MustRegister(fn interface{}, name, desc string) {
+	if err := ctrl.register(fn, name, desc); err != nil {
+		panic(errFunc("MustRegister")(err))
+	}
+}
+
+func (ctrl *Controller) Serve(rw io.ReadWriter) error {
+	if err := ctrl.serve(rw); err != nil {
+		return errFunc("Serve")(err)
+	}
+	return nil
+}
+
+func (ctrl *Controller) register(fn interface{}, name, desc string) error {
 	if fn == nil {
-		return errfn("fn must not be nil")
+		return errors.New("fn must not be nil")
 	}
 	if name == "" {
-		return errfn("name must not be empty")
+		return errors.New("name must not be empty")
 	}
 	meta, err := genFuncMeta(fn, name, desc)
 	if err != nil {
-		return errfn(err.Error())
+		return err
 	}
 
 	ctrl.rwlock.Lock()
 	defer ctrl.rwlock.Unlock()
 
 	if _, ok := ctrl.funcs[name]; ok {
-		return errfn(fmt.Sprintf("name '%s' has been registered", name))
+		return fmt.Errorf("name '%s' has been registered", name)
 	}
 	ctrl.funcs[name] = meta
 	return nil
 }
 
-func (ctrl *Controller) MustRegister(fn interface{}, name, desc string) {
-	if err := ctrl.Register(fn, name, desc); err != nil {
-		panic(err)
-	}
-}
-
-func (ctrl *Controller) Serve(rw io.ReadWriter) error {
+func (ctrl *Controller) serve(rw io.ReadWriter) error {
 	prompt(rw)
+
 	scanner := bufio.NewScanner(rw)
 	for scanner.Scan() {
 		cmd := strings.TrimSpace(scanner.Text())
@@ -72,7 +85,7 @@ func (ctrl *Controller) Serve(rw io.ReadWriter) error {
 			continue
 		}
 
-		ctrl.rwlock.RLock() // todo
+		ctrl.rwlock.RLock()
 
 		if builtin(cmd) {
 			ctrl.handleBuiltin(rw, cmd)
@@ -82,6 +95,7 @@ func (ctrl *Controller) Serve(rw io.ReadWriter) error {
 
 		ctrl.rwlock.RUnlock()
 	}
+
 	return scanner.Err()
 }
 
