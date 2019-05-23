@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/gratonos/controller"
+	ctrl "github.com/gratonos/controller"
 )
 
 func test() int {
 	return 0
 }
+
 func main() {
-	ctrl := controller.New()
-	ctrl.MustRegister(test, "test", "test")
+	ctrl.MustRegister(test, "test", "test with unix domain socket")
 	ctrl.ServeUnix("/tmp/controller")
 }

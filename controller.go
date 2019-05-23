@@ -25,10 +25,6 @@ type Controller struct {
 	rwlock sync.RWMutex
 }
 
-const unixPerm = 0770
-
-var defaultController = New()
-
 func New() *Controller {
 	return &Controller{
 		funcs: make(map[string]*funcMeta),
@@ -150,6 +146,6 @@ func checkType(kind reflect.Kind) error {
 		return nil
 	default:
 		return errors.New("supported parameter types are bool, integers, " +
-			"floats, string and their compatible custom types")
+			"floats, string and their type aliases")
 	}
 }

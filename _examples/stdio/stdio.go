@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gratonos/controller"
+	ctrl "github.com/gratonos/controller"
 )
 
 func init() {
@@ -101,8 +101,6 @@ func randError() (int, error) {
 }
 
 func main() {
-	ctrl := controller.New()
-
 	ctrl.MustRegister(void, "void", "do nothing")
 
 	ctrl.MustRegister(and, "and", "logic AND")
@@ -129,5 +127,5 @@ func main() {
 
 	ctrl.MustRegister(randError, "randError", "rand of error")
 
-	ctrl.Serve(controller.Stdio())
+	ctrl.Serve(ctrl.Stdio())
 }
