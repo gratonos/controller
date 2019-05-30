@@ -1,2 +1,3 @@
-# controller
-parse input then call the corresponding registered function
+# controller #
+
+Read from stdin or unix domain socket then call registered functions.
