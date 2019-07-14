@@ -31,27 +31,27 @@ func New() *Controller {
 	}
 }
 
-func (ctrl *Controller) Register(fn interface{}, name, desc string) error {
-	if err := ctrl.register(fn, name, desc); err != nil {
+func (this *Controller) Register(fn interface{}, name, desc string) error {
+	if err := this.register(fn, name, desc); err != nil {
 		return errFunc("Register")(err)
 	}
 	return nil
 }
 
-func (ctrl *Controller) MustRegister(fn interface{}, name, desc string) {
-	if err := ctrl.register(fn, name, desc); err != nil {
+func (this *Controller) MustRegister(fn interface{}, name, desc string) {
+	if err := this.register(fn, name, desc); err != nil {
 		panic(errFunc("MustRegister")(err))
 	}
 }
 
-func (ctrl *Controller) Serve(rw io.ReadWriter) error {
-	if err := ctrl.serve(rw); err != nil {
+func (this *Controller) Serve(rw io.ReadWriter) error {
+	if err := this.serve(rw); err != nil {
 		return errFunc("Serve")(err)
 	}
 	return nil
 }
 
-func (ctrl *Controller) register(fn interface{}, name, desc string) error {
+func (this *Controller) register(fn interface{}, name, desc string) error {
 	if fn == nil {
 		return errors.New("fn must not be nil")
 	}
@@ -66,22 +66,23 @@ func (ctrl *Controller) register(fn interface{}, name, desc string) error {
 	if !ok {
 		return errors.New("name is not a valid identity")
 	}
-	meta, err := genFuncMeta(fn, name, desc)
+	meta, err := makeFuncMeta(fn, name, desc)
 	if err != nil {
 		return err
 	}
 
-	ctrl.rwlock.Lock()
-	defer ctrl.rwlock.Unlock()
+	this.rwlock.Lock()
+	defer this.rwlock.Unlock()
 
-	if _, ok := ctrl.funcs[name]; ok {
+	if _, ok := this.funcs[name]; ok {
 		return fmt.Errorf("name '%s' has been registered", name)
 	}
-	ctrl.funcs[name] = meta
+	this.funcs[name] = meta
+
 	return nil
 }
 
-func (ctrl *Controller) serve(rw io.ReadWriter) error {
+func (this *Controller) serve(rw io.ReadWriter) error {
 	prompt(rw)
 
 	scanner := bufio.NewScanner(rw)
@@ -91,21 +92,21 @@ func (ctrl *Controller) serve(rw io.ReadWriter) error {
 			continue
 		}
 
-		ctrl.rwlock.RLock()
+		this.rwlock.RLock()
 
 		if builtin(cmd) {
-			ctrl.handleBuiltin(rw, cmd)
+			this.handleBuiltin(rw, cmd)
 		} else {
-			ctrl.handleFuncCall(rw, cmd)
+			this.handleFuncCall(rw, cmd)
 		}
 
-		ctrl.rwlock.RUnlock()
+		this.rwlock.RUnlock()
 	}
 
 	return scanner.Err()
 }
 
-func genFuncMeta(fn interface{}, name, desc string) (*funcMeta, error) {
+func makeFuncMeta(fn interface{}, name, desc string) (*funcMeta, error) {
 	typ := reflect.TypeOf(fn)
 	if typ.Kind() != reflect.Func {
 		return nil, errors.New("fn is not a function")

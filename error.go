@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -12,6 +11,7 @@ func errFunc(name string) func(interface{}) error {
 	}
 }
 
-func parseError(msg string) (fn reflect.Value, args []reflect.Value, err error) {
-	return reflect.ValueOf(nil), nil, errors.New(msg)
+func parseError(format string, args ...interface{}) (reflect.Value, []reflect.Value, error) {
+	err := fmt.Errorf("parse: "+format, args...)
+	return reflect.ValueOf(nil), nil, err
 }

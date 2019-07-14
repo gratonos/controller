@@ -1,38 +1,41 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"sort"
 	"strings"
-	"text/tabwriter"
 )
 
-func prompt(wt io.Writer) {
-	msg := "type '-list [name]' to show registered functions " +
-		"(case insensitive, wildcard '*' supported)"
-	fmt.Fprintln(wt, colorize(msg, green))
-}
-
-func builtin(cmd string) bool {
-	return strings.HasPrefix(cmd, "-")
-}
-
-func (ctrl *Controller) handleBuiltin(wt io.Writer, cmd string) {
+func (this *Controller) handleBuiltin(writer io.Writer, cmd string) {
 	switch {
 	case strings.HasPrefix(cmd, "-list"):
-		ctrl.handleList(wt, strings.Fields(cmd)[1:])
+		this.handleList(writer, strings.Fields(cmd)[1:])
 	default:
-		printError(wt, fmt.Sprintf("unsupported command '%s'", cmd))
+		printError(writer, "unsupported command '%s'", cmd)
 	}
 }
 
-func (ctrl *Controller) handleList(wt io.Writer, args []string) {
+func (this *Controller) handleList(writer io.Writer, args []string) {
+	metaList, err := this.filterFuncs(args)
+	if err != nil {
+		printError(writer, "%v", err)
+		return
+	}
+
+	sort.Slice(metaList, func(i int, j int) bool {
+		return metaList[i].name < metaList[j].name
+	})
+
+	printFuncList(writer, metaList)
+}
+
+func (this *Controller) filterFuncs(args []string) ([]*funcMeta, error) {
 	argc := len(args)
 	if argc > 1 {
-		printError(wt, fmt.Sprintf("-list: too many arguments, want 0 or 1, have %d", argc))
-		return
+		return nil, fmt.Errorf("-list: too many arguments, want 0 or 1, have %d", argc)
 	}
 
 	arg, exp := "", ""
@@ -42,36 +45,28 @@ func (ctrl *Controller) handleList(wt io.Writer, args []string) {
 	}
 	reg, err := regexp.Compile(exp)
 	if err != nil {
-		printError(wt, fmt.Sprintf("-list: invalid argument '%s'", arg))
-		return
+		return nil, fmt.Errorf("-list: invalid argument '%s'", arg)
 	}
 
-	var names []string
-	for name := range ctrl.funcs {
+	var metaList []*funcMeta
+	for name, meta := range this.funcs {
 		if !reg.MatchString(name) {
 			continue
 		}
-		names = append(names, name)
+		metaList = append(metaList, meta)
 	}
-	sort.Strings(names)
 
-	ctrl.listFunctions(wt, names)
-
-	if len(names) == 0 {
+	if len(metaList) == 0 {
 		if argc == 0 {
-			printError(wt, "-list: no registered functions")
+			return nil, errors.New("-list: no registered functions")
 		} else {
-			printError(wt, fmt.Sprintf("-list: function '%s' not found", arg))
+			return nil, fmt.Errorf("-list: function '%s' not found", arg)
 		}
 	}
+
+	return metaList, nil
 }
 
-func (ctrl *Controller) listFunctions(wt io.Writer, names []string) {
-	tw := tabwriter.NewWriter(wt, 0, 0, 4, ' ', 0)
-	for _, name := range names {
-		meta := ctrl.funcs[name]
-		output := fmt.Sprintf("%s\t%v\t// %s", meta.name, meta.fn.Type(), meta.desc)
-		fmt.Fprintln(tw, colorize(output, green))
-	}
-	tw.Flush()
+func builtin(cmd string) bool {
+	return strings.HasPrefix(cmd, "-")
 }

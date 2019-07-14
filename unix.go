@@ -8,36 +8,53 @@ import (
 
 const dirPerm = 0770
 
-func (ctrl *Controller) ServeUnix(path string) error {
-	errfn := errFunc("ServeUnix")
+func (this *Controller) ServeUnix(path string) error {
+	errFn := errFunc("ServeUnix")
 
 	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
-		return errfn(err)
+		return errFn(err)
 	}
-	if err := checkAndRemove(path); err != nil {
-		return errfn(err)
+	if err := removeIfExists(path); err != nil {
+		return errFn(err)
 	}
 
 	listener, err := net.Listen("unix", path)
 	if err != nil {
-		return errfn(err)
+		return errFn(err)
 	}
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			return errfn(err)
+			return errFn(err)
 		}
 		go func() {
-			ctrl.serve(conn)
+			_ = this.serve(conn)
 			conn.Close()
 		}()
 	}
 }
 
-func checkAndRemove(path string) error {
-	if _, err := os.Stat(path); err != nil {
+func removeIfExists(path string) error {
+	ok, err := fileExists(path)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return os.Remove(path)
+	} else {
 		return nil
 	}
-	return os.Remove(path)
+}
+
+func fileExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	} else {
+		return true, nil
+	}
 }
