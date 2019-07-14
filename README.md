@@ -1,3 +1,3 @@
 # controller #
 
-Read from stdin or unix domain socket then call registered functions.
+Read and parse the input, then call the corresponding function, finally print the result.
