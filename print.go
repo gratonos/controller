@@ -41,7 +41,14 @@ func printCallResult(writer io.Writer, results []reflect.Value) {
 	}
 
 	for i, result := range results {
-		output := fmt.Sprintf("[%d] %v: %v", i, result.Type(), result)
+		typ := fmt.Sprint(result.Type())
+		kind := fmt.Sprint(result.Kind())
+		var output string
+		if typ == kind {
+			output = fmt.Sprintf("[%d] %v: %v", i, typ, result)
+		} else {
+			output = fmt.Sprintf("[%d] %v(%v): %v", i, typ, kind, result)
+		}
 		fmt.Fprintln(writer, colorize(output, color))
 	}
 }
