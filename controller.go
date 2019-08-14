@@ -21,6 +21,7 @@ type funcMeta struct {
 }
 
 type Controller struct {
+	prompt  atomicBool
 	funcMap map[string]*funcMeta
 	rwlock  sync.RWMutex
 }
@@ -29,6 +30,14 @@ func New() *Controller {
 	return &Controller{
 		funcMap: make(map[string]*funcMeta),
 	}
+}
+
+func (this *Controller) Prompt() bool {
+	return this.prompt.Get()
+}
+
+func (this *Controller) SetPrompt(prompt bool) {
+	this.prompt.Set(prompt)
 }
 
 func (this *Controller) Register(fn interface{}, name, desc string) error {
@@ -84,7 +93,9 @@ func (this *Controller) register(fn interface{}, name, desc string) error {
 }
 
 func (this *Controller) serve(rw io.ReadWriter) error {
-	prompt(rw)
+	if this.prompt.Get() {
+		printPrompt(rw)
+	}
 
 	scanner := bufio.NewScanner(rw)
 	for scanner.Scan() {

@@ -8,6 +8,15 @@ var defaultController *Controller
 
 func init() {
 	defaultController = New()
+	defaultController.SetPrompt(true)
+}
+
+func Prompt() bool {
+	return defaultController.Prompt()
+}
+
+func SetPrompt(prompt bool) {
+	defaultController.SetPrompt(prompt)
 }
 
 func Register(fn interface{}, name, desc string) error {

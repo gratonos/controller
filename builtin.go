@@ -16,8 +16,12 @@ func (this *Controller) handleBuiltinCmd(writer io.Writer, input string) {
 
 	cmd, args := fields[0], fields[1:]
 	switch cmd {
+	case "-help":
+		printHelp(writer)
 	case "-list":
 		this.handleCmdList(writer, args)
+	case "-prompt":
+		this.handleCmdPrompt(writer, args)
 	default:
 		printError(writer, "unsupported command '%s'", cmd)
 	}
@@ -51,6 +55,26 @@ func (this *Controller) handleCmdList(writer io.Writer, args []string) {
 	})
 
 	printFuncList(writer, metaList)
+}
+
+func (this *Controller) handleCmdPrompt(writer io.Writer, args []string) {
+	argc := len(args)
+	if argc != 1 {
+		printError(writer, "-prompt: want 1 argument, have %d", argc)
+		return
+	}
+
+	arg := args[0]
+	switch arg {
+	case "on":
+		this.SetPrompt(true)
+		printMsg(writer, "prompt on")
+	case "off":
+		this.SetPrompt(false)
+		printMsg(writer, "prompt off")
+	default:
+		printError(writer, "-prompt: invalid argument '%s'", arg)
+	}
 }
 
 func isBuiltinCmd(input string) bool {
