@@ -21,13 +21,13 @@ type funcMeta struct {
 }
 
 type Controller struct {
-	funcs  map[string]*funcMeta
-	rwlock sync.RWMutex
+	funcMap map[string]*funcMeta
+	rwlock  sync.RWMutex
 }
 
 func New() *Controller {
 	return &Controller{
-		funcs: make(map[string]*funcMeta),
+		funcMap: make(map[string]*funcMeta),
 	}
 }
 
@@ -66,6 +66,7 @@ func (this *Controller) register(fn interface{}, name, desc string) error {
 	if !ok {
 		return errors.New("name is not a valid identity")
 	}
+
 	meta, err := makeFuncMeta(fn, name, desc)
 	if err != nil {
 		return err
@@ -74,10 +75,10 @@ func (this *Controller) register(fn interface{}, name, desc string) error {
 	this.rwlock.Lock()
 	defer this.rwlock.Unlock()
 
-	if _, ok := this.funcs[name]; ok {
-		return fmt.Errorf("name '%s' has been registered", name)
+	if _, ok := this.funcMap[name]; ok {
+		return fmt.Errorf("name '%s' had been registered", name)
 	}
-	this.funcs[name] = meta
+	this.funcMap[name] = meta
 
 	return nil
 }
@@ -87,17 +88,17 @@ func (this *Controller) serve(rw io.ReadWriter) error {
 
 	scanner := bufio.NewScanner(rw)
 	for scanner.Scan() {
-		cmd := strings.TrimSpace(scanner.Text())
-		if cmd == "" {
+		input := strings.TrimSpace(scanner.Text())
+		if input == "" {
 			continue
 		}
 
 		this.rwlock.RLock()
 
-		if builtin(cmd) {
-			this.handleBuiltin(rw, cmd)
+		if isBuiltinCmd(input) {
+			this.handleBuiltinCmd(rw, input)
 		} else {
-			this.handleFuncCall(rw, cmd)
+			this.handleFuncCall(rw, input)
 		}
 
 		this.rwlock.RUnlock()

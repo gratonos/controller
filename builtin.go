@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -9,19 +8,41 @@ import (
 	"strings"
 )
 
-func (this *Controller) handleBuiltin(writer io.Writer, cmd string) {
-	switch {
-	case strings.HasPrefix(cmd, "-list"):
-		this.handleList(writer, strings.Fields(cmd)[1:])
+func (this *Controller) handleBuiltinCmd(writer io.Writer, input string) {
+	fields := strings.Fields(input)
+	if len(fields) == 0 {
+		panic("checking input failure")
+	}
+
+	cmd, args := fields[0], fields[1:]
+	switch cmd {
+	case "-list":
+		this.handleCmdList(writer, args)
 	default:
 		printError(writer, "unsupported command '%s'", cmd)
 	}
 }
 
-func (this *Controller) handleList(writer io.Writer, args []string) {
-	metaList, err := this.filterFuncs(args)
+func (this *Controller) handleCmdList(writer io.Writer, args []string) {
+	argc := len(args)
+	if argc > 1 {
+		printError(writer, "-list: too many arguments, want 0 or 1, have %d", argc)
+		return
+	}
+
+	var arg string
+	if argc == 1 {
+		arg = args[0]
+	}
+
+	metaList, err := filterFuncs(this.funcMap, arg)
 	if err != nil {
-		printError(writer, "%v", err)
+		printError(writer, "-list: %v", err)
+		return
+	}
+
+	if len(metaList) == 0 {
+		printError(writer, "-list: no results")
 		return
 	}
 
@@ -32,41 +53,27 @@ func (this *Controller) handleList(writer io.Writer, args []string) {
 	printFuncList(writer, metaList)
 }
 
-func (this *Controller) filterFuncs(args []string) ([]*funcMeta, error) {
-	argc := len(args)
-	if argc > 1 {
-		return nil, fmt.Errorf("-list: too many arguments, want 0 or 1, have %d", argc)
-	}
+func isBuiltinCmd(input string) bool {
+	return strings.HasPrefix(input, "-")
+}
 
-	arg, exp := "", ""
-	if argc == 1 {
-		arg = args[0]
+func filterFuncs(funcMap map[string]*funcMeta, arg string) ([]*funcMeta, error) {
+	var exp string
+	if arg != "" {
 		exp = `(?i)\b` + strings.Replace(arg, "*", ".*", -1) + `\b`
 	}
+
 	reg, err := regexp.Compile(exp)
 	if err != nil {
-		return nil, fmt.Errorf("-list: invalid argument '%s'", arg)
+		return nil, fmt.Errorf("invalid argument '%s'", arg)
 	}
 
 	var metaList []*funcMeta
-	for name, meta := range this.funcs {
-		if !reg.MatchString(name) {
-			continue
-		}
-		metaList = append(metaList, meta)
-	}
-
-	if len(metaList) == 0 {
-		if argc == 0 {
-			return nil, errors.New("-list: no registered functions")
-		} else {
-			return nil, fmt.Errorf("-list: function '%s' not found", arg)
+	for name, meta := range funcMap {
+		if reg.MatchString(name) {
+			metaList = append(metaList, meta)
 		}
 	}
 
 	return metaList, nil
-}
-
-func builtin(cmd string) bool {
-	return strings.HasPrefix(cmd, "-")
 }

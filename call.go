@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-func (this *Controller) handleFuncCall(writer io.Writer, cmd string) {
-	fn, args, err := this.parseExpr(cmd)
+func (this *Controller) handleFuncCall(writer io.Writer, input string) {
+	fn, args, err := parseCall(input, this.funcMap)
 	if err != nil {
 		printError(writer, "%v", err)
 		return
@@ -19,39 +19,71 @@ func (this *Controller) handleFuncCall(writer io.Writer, cmd string) {
 	printCallResult(writer, fn.Call(args))
 }
 
-func (this *Controller) parseExpr(cmd string) (fn reflect.Value, args []reflect.Value, err error) {
-	expr, err := parser.ParseExpr(cmd)
+func parseCall(input string, funcMap map[string]*funcMeta) (
+	fn reflect.Value, args []reflect.Value, err error) {
+
+	call, err := parseExpr(input)
 	if err != nil {
-		return parseError("'%s' is not a valid expression", cmd)
+		return parsingError("%v", err)
+	}
+
+	name, err := parseName(call, input)
+	if err != nil {
+		return parsingError("%v", err)
+	}
+
+	meta, ok := funcMap[name]
+	if !ok {
+		return parsingError("function '%s' is not registered", name)
+	}
+
+	args, err = parseArgs(call, input, meta)
+	if err != nil {
+		return parsingError("%v", err)
+	}
+
+	return meta.fn, args, nil
+}
+
+func parseExpr(input string) (*ast.CallExpr, error) {
+	expr, err := parser.ParseExpr(input)
+	if err != nil {
+		return nil, fmt.Errorf("'%s' is not a valid expression", input)
 	}
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
-		return parseError("'%s' is not a function call expression", cmd)
+		return nil, fmt.Errorf("'%s' is not a call expression", input)
 	}
+	return call, nil
+}
+
+func parseName(call *ast.CallExpr, input string) (string, error) {
 	ident, ok := call.Fun.(*ast.Ident)
 	if !ok {
-		return parseError("'%s' is not a valid function call expression", cmd)
+		text := exprText(call.Fun, input)
+		return "", fmt.Errorf("'%s' is not a valid function name", text)
 	}
-	meta, ok := this.funcs[ident.Name]
-	if !ok {
-		return parseError("function '%s' is not registered", ident.Name)
-	}
+	return ident.Name, nil
+}
+
+func parseArgs(call *ast.CallExpr, input string, meta *funcMeta) ([]reflect.Value, error) {
 	if len(meta.in) != len(call.Args) {
-		return parseError("unmatched argument count, want %d, have %d",
+		return nil, fmt.Errorf("unmatched argument count, want %d, have %d",
 			len(meta.in), len(call.Args))
 	}
 
+	var args []reflect.Value
 	for i := 0; i < len(meta.in); i++ {
-		text := cmd[call.Args[i].Pos()-1 : call.Args[i].End()-1]
+		text := exprText(call.Args[i], input)
 		arg, err := parseArg(text, meta.in[i])
 		if err != nil {
-			return parseError("argument[%d] '%s' is not a valid literal of type %v",
+			return nil, fmt.Errorf("argument[%d] '%s' is not a valid literal of type %v",
 				i, text, meta.in[i])
 		}
 		args = append(args, arg)
 	}
 
-	return meta.fn, args, nil
+	return args, nil
 }
 
 func parseArg(text string, expectedType reflect.Type) (reflect.Value, error) {
@@ -69,7 +101,7 @@ func parseArg(text string, expectedType reflect.Type) (reflect.Value, error) {
 	case reflect.String:
 		value, err = parseString(text)
 	default:
-		panic("impossible")
+		panic("checking argument failure")
 	}
 
 	if err != nil {
@@ -78,29 +110,33 @@ func parseArg(text string, expectedType reflect.Type) (reflect.Value, error) {
 	return reflect.ValueOf(value).Convert(expectedType), nil
 }
 
-func parseBool(text string) (interface{}, error) {
+func parseBool(text string) (bool, error) {
 	switch text {
 	case "true":
 		return true, nil
 	case "false":
 		return false, nil
 	default:
-		return nil, fmt.Errorf("'%s' is not a bool literal")
+		return false, fmt.Errorf("'%s' is not a bool literal")
 	}
 }
 
-func parseInt(text string, bitSize int) (interface{}, error) {
+func parseInt(text string, bitSize int) (int64, error) {
 	return strconv.ParseInt(text, 0, bitSize)
 }
 
-func parseUint(text string, bitSize int) (interface{}, error) {
+func parseUint(text string, bitSize int) (uint64, error) {
 	return strconv.ParseUint(text, 0, bitSize)
 }
 
-func parseFloat(text string, bitSize int) (interface{}, error) {
+func parseFloat(text string, bitSize int) (float64, error) {
 	return strconv.ParseFloat(text, bitSize)
 }
 
-func parseString(text string) (interface{}, error) {
+func parseString(text string) (string, error) {
 	return strconv.Unquote(text)
+}
+
+func exprText(expr ast.Expr, text string) string {
+	return text[expr.Pos()-1 : expr.End()-1]
 }
