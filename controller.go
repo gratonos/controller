@@ -26,10 +26,13 @@ type Controller struct {
 	rwlock  sync.RWMutex
 }
 
-func New() *Controller {
-	return &Controller{
+func New(prompt bool) *Controller {
+	controller := &Controller{
 		funcMap: make(map[string]*funcMeta),
 	}
+	controller.registerBuiltinFuncs()
+	controller.SetPrompt(prompt)
+	return controller
 }
 
 func (this *Controller) Prompt() bool {
@@ -106,11 +109,7 @@ func (this *Controller) serve(rw io.ReadWriter) error {
 
 		this.rwlock.RLock()
 
-		if isBuiltinCmd(input) {
-			this.handleBuiltinCmd(rw, input)
-		} else {
-			this.handleFuncCall(rw, input)
-		}
+		handleFuncCall(rw, input, this.funcMap)
 
 		this.rwlock.RUnlock()
 	}

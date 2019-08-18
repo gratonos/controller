@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-func (this *Controller) handleFuncCall(writer io.Writer, input string) {
-	fn, args, err := parseCall(input, this.funcMap)
+func handleFuncCall(writer io.Writer, input string, funcMap map[string]*funcMeta) {
+	fn, args, err := parseCall(input, funcMap)
 	if err != nil {
 		printError(writer, "%v", err)
 		return

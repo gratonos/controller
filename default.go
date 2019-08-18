@@ -7,8 +7,7 @@ import (
 var defaultController *Controller
 
 func init() {
-	defaultController = New()
-	defaultController.SetPrompt(true)
+	defaultController = New(true)
 }
 
 func Prompt() bool {

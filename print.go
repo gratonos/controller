@@ -4,13 +4,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"text/tabwriter"
 )
-
-type command struct {
-	name string
-	desc string
-}
 
 func cprint(writer io.Writer, msg string, color colorID) {
 	fmt.Fprintln(writer, colorize(msg, color))
@@ -25,29 +19,7 @@ func printError(writer io.Writer, format string, args ...interface{}) {
 }
 
 func printPrompt(writer io.Writer) {
-	printMsg(writer, "%s", "type '-help' to show builtin commands")
-}
-
-func printHelp(writer io.Writer) {
-	commands := []command{
-		{"-help", "show builtin commands"},
-		{"-list [name]", "show registered functions (case insensitive, wildcard '*' supported)"},
-		{"-prompt <on/off>", "set whether to print prompt while serving begins"},
-	}
-
-	tw := tabwriter.NewWriter(writer, 0, 0, 4, ' ', 0)
-	for _, cmd := range commands {
-		printMsg(tw, "%s\t%s", cmd.name, cmd.desc)
-	}
-	tw.Flush()
-}
-
-func printFuncList(writer io.Writer, metaList []*funcMeta) {
-	tw := tabwriter.NewWriter(writer, 0, 0, 4, ' ', 0)
-	for _, meta := range metaList {
-		printMsg(tw, "%s\t%v\t// %s", meta.name, meta.fn.Type(), meta.desc)
-	}
-	tw.Flush()
+	printMsg(writer, "%s", `type '_list("")' to show registered function list`)
 }
 
 func printCallResult(writer io.Writer, results []reflect.Value) {
