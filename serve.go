@@ -19,22 +19,29 @@ func (this *Controller) Serve(rw io.ReadWriter, config ServeConfig) error {
 
 func (this *Controller) serve(rw io.ReadWriter, config ServeConfig) error {
 	if !config.noPrompt {
-		printPrompt(rw)
+		outputPrompt(rw)
 	}
 
 	scanner := bufio.NewScanner(rw)
 	for scanner.Scan() {
 		input := strings.TrimSpace(scanner.Text())
-		if input == "" {
-			continue
+		if input != "" {
+			this.doCall(rw, input)
 		}
-
-		this.rwlock.RLock()
-
-		handleFuncCall(rw, input, this.funcMap)
-
-		this.rwlock.RUnlock()
 	}
 
 	return scanner.Err()
+}
+
+func (this *Controller) doCall(writer io.Writer, literal string) {
+	this.rwlock.RLock()
+	defer this.rwlock.RUnlock()
+
+	results, err := call(literal, this.funcMap)
+	if err != nil {
+		outputError(writer, "%v", err)
+		return
+	}
+
+	outputCallResult(writer, results)
 }

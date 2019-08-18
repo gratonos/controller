@@ -43,6 +43,22 @@ func (this *Controller) MustRegister(fn interface{}, name, desc string) {
 	}
 }
 
+func (this *Controller) Call(literal string) ([]interface{}, error) {
+	this.rwlock.RLock()
+	defer this.rwlock.RUnlock()
+
+	results, err := call(literal, this.funcMap)
+	if err != nil {
+		return nil, errFunc("Call")(err)
+	}
+
+	ret := make([]interface{}, 0, len(results))
+	for _, result := range results {
+		ret = append(ret, result.Interface())
+	}
+	return ret, nil
+}
+
 func (this *Controller) register(fn interface{}, name, desc string) error {
 	if fn == nil {
 		return errors.New("fn must not be nil")

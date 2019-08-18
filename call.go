@@ -4,30 +4,27 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
-	"io"
 	"reflect"
 	"strconv"
 )
 
-func handleFuncCall(writer io.Writer, input string, funcMap map[string]*funcMeta) {
-	fn, args, err := parseCall(input, funcMap)
+func call(literal string, funcMap map[string]*funcMeta) ([]reflect.Value, error) {
+	fn, args, err := parse(literal, funcMap)
 	if err != nil {
-		printError(writer, "%v", err)
-		return
+		return nil, err
 	}
-
-	printCallResult(writer, fn.Call(args))
+	return fn.Call(args), nil
 }
 
-func parseCall(input string, funcMap map[string]*funcMeta) (
+func parse(literal string, funcMap map[string]*funcMeta) (
 	fn reflect.Value, args []reflect.Value, err error) {
 
-	call, err := parseExpr(input)
+	call, err := parseExpr(literal)
 	if err != nil {
 		return parsingError("%v", err)
 	}
 
-	name, err := parseName(call, input)
+	name, err := parseName(call, literal)
 	if err != nil {
 		return parsingError("%v", err)
 	}
@@ -37,7 +34,7 @@ func parseCall(input string, funcMap map[string]*funcMeta) (
 		return parsingError("function '%s' is not registered", name)
 	}
 
-	args, err = parseArgs(call, input, meta)
+	args, err = parseArgs(call, literal, meta)
 	if err != nil {
 		return parsingError("%v", err)
 	}
@@ -45,28 +42,28 @@ func parseCall(input string, funcMap map[string]*funcMeta) (
 	return meta.fn, args, nil
 }
 
-func parseExpr(input string) (*ast.CallExpr, error) {
-	expr, err := parser.ParseExpr(input)
+func parseExpr(literal string) (*ast.CallExpr, error) {
+	expr, err := parser.ParseExpr(literal)
 	if err != nil {
-		return nil, fmt.Errorf("'%s' is not a valid expression", input)
+		return nil, fmt.Errorf("'%s' is not a valid expression", literal)
 	}
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
-		return nil, fmt.Errorf("'%s' is not a call expression", input)
+		return nil, fmt.Errorf("'%s' is not a call expression", literal)
 	}
 	return call, nil
 }
 
-func parseName(call *ast.CallExpr, input string) (string, error) {
+func parseName(call *ast.CallExpr, literal string) (string, error) {
 	ident, ok := call.Fun.(*ast.Ident)
 	if !ok {
-		text := exprText(call.Fun, input)
+		text := exprText(call.Fun, literal)
 		return "", fmt.Errorf("'%s' is not a valid function name", text)
 	}
 	return ident.Name, nil
 }
 
-func parseArgs(call *ast.CallExpr, input string, meta *funcMeta) ([]reflect.Value, error) {
+func parseArgs(call *ast.CallExpr, literal string, meta *funcMeta) ([]reflect.Value, error) {
 	if len(meta.in) != len(call.Args) {
 		return nil, fmt.Errorf("unmatched argument count, want %d, have %d",
 			len(meta.in), len(call.Args))
@@ -74,7 +71,7 @@ func parseArgs(call *ast.CallExpr, input string, meta *funcMeta) ([]reflect.Valu
 
 	var args []reflect.Value
 	for i := 0; i < len(meta.in); i++ {
-		text := exprText(call.Args[i], input)
+		text := exprText(call.Args[i], literal)
 		arg, err := parseArg(text, meta.in[i])
 		if err != nil {
 			return nil, fmt.Errorf("argument[%d] '%s' is not a valid literal of type %v",

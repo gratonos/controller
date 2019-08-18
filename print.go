@@ -6,25 +6,25 @@ import (
 	"reflect"
 )
 
-func cprint(writer io.Writer, msg string, color colorID) {
+func coutput(writer io.Writer, msg string, color colorID) {
 	fmt.Fprintln(writer, colorize(msg, color))
 }
 
-func printMsg(writer io.Writer, format string, args ...interface{}) {
-	cprint(writer, fmt.Sprintf(format, args...), green)
+func output(writer io.Writer, format string, args ...interface{}) {
+	coutput(writer, fmt.Sprintf(format, args...), green)
 }
 
-func printError(writer io.Writer, format string, args ...interface{}) {
-	cprint(writer, fmt.Sprintf(format, args...), red)
+func outputError(writer io.Writer, format string, args ...interface{}) {
+	coutput(writer, fmt.Sprintf(format, args...), red)
 }
 
-func printPrompt(writer io.Writer) {
-	printMsg(writer, "%s", `type '_list("")' to show registered function list`)
+func outputPrompt(writer io.Writer) {
+	output(writer, "%s", `type '_list("")' to show registered function list`)
 }
 
-func printCallResult(writer io.Writer, results []reflect.Value) {
+func outputCallResult(writer io.Writer, results []reflect.Value) {
 	if len(results) == 0 {
-		printMsg(writer, "%s", "<void>")
+		output(writer, "%s", "<void>")
 		return
 	}
 
@@ -42,7 +42,7 @@ func printCallResult(writer io.Writer, results []reflect.Value) {
 		} else {
 			output = fmt.Sprintf("[%d] %v(%v): %v", i, typ, kind, result)
 		}
-		cprint(writer, output, color)
+		coutput(writer, output, color)
 	}
 }
 

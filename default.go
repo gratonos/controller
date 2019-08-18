@@ -18,6 +18,10 @@ func MustRegister(fn interface{}, name, desc string) {
 	defaultController.MustRegister(fn, name, desc)
 }
 
+func Call(text string) ([]interface{}, error) {
+	return defaultController.Call(text)
+}
+
 func Serve(rw io.ReadWriter, config ServeConfig) error {
 	return defaultController.Serve(rw, config)
 }
