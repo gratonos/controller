@@ -11,13 +11,15 @@ import (
 const dirPerm = 0770
 
 type ServeUnixConfig struct {
-	noPrompt bool
+	NoPrompt   bool
+	NoColoring bool
 }
 
 func (this *Controller) ServeUnix(path string, config ServeUnixConfig) error {
 	errFn := errFunc("ServeUnix")
 	serveConfig := ServeConfig{
-		noPrompt: config.noPrompt,
+		NoPrompt:   config.NoPrompt,
+		NoColoring: config.NoColoring,
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
