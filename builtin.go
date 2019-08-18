@@ -29,6 +29,9 @@ func (this *Controller) listFuncs(name string) (string, error) {
 	sort.Slice(metaList, func(i int, j int) bool {
 		return metaList[i].name < metaList[j].name
 	})
+	sort.SliceStable(metaList, func(i int, j int) bool {
+		return strings.ToLower(metaList[i].name) < strings.ToLower(metaList[j].name)
+	})
 
 	return formatFuncList(metaList), nil
 }
