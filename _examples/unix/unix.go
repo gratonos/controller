@@ -10,5 +10,5 @@ func test() int {
 
 func main() {
 	ctrl.MustRegister(test, "test", "test with unix domain socket")
-	ctrl.ServeUnix("/tmp/controller")
+	ctrl.ServeUnix("/tmp/controller", ctrl.ServeUnixConfig{})
 }

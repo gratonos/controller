@@ -10,8 +10,15 @@ import (
 
 const dirPerm = 0770
 
-func (this *Controller) ServeUnix(path string) error {
+type ServeUnixConfig struct {
+	noPrompt bool
+}
+
+func (this *Controller) ServeUnix(path string, config ServeUnixConfig) error {
 	errFn := errFunc("ServeUnix")
+	serveConfig := ServeConfig{
+		noPrompt: config.noPrompt,
+	}
 
 	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
 		return errFn(err)
@@ -31,7 +38,7 @@ func (this *Controller) ServeUnix(path string) error {
 			return errFn(err)
 		}
 		go func() {
-			_ = this.serve(conn)
+			_ = this.serve(conn, serveConfig)
 			conn.Close()
 		}()
 	}

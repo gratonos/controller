@@ -10,10 +10,9 @@ import (
 	"text/tabwriter"
 )
 
-func (this *Controller) registerBuiltinFuncs() {
+func (this *Controller) registerBuiltInFuncs() {
 	this.MustRegister(this.listFuncs, "_list", "return registered function list "+
 		"(case insensitive, wildcard '*' supported)")
-	this.MustRegister(this.SetPrompt, "_prompt", "set prompt on/off while serving begins")
 }
 
 func (this *Controller) listFuncs(name string) (string, error) {

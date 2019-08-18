@@ -127,5 +127,5 @@ func main() {
 
 	ctrl.MustRegister(randError, "randError", "rand of error")
 
-	ctrl.Serve(ctrl.Stdio())
+	ctrl.Serve(ctrl.Stdio(), ctrl.ServeConfig{})
 }

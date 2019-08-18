@@ -1,14 +1,11 @@
 package controller
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
-	"io"
 	"reflect"
-	"strings"
 	"sync"
 )
 
@@ -21,26 +18,16 @@ type funcMeta struct {
 }
 
 type Controller struct {
-	prompt  atomicBool
 	funcMap map[string]*funcMeta
 	rwlock  sync.RWMutex
 }
 
-func New(prompt bool) *Controller {
+func New() *Controller {
 	controller := &Controller{
 		funcMap: make(map[string]*funcMeta),
 	}
-	controller.registerBuiltinFuncs()
-	controller.SetPrompt(prompt)
+	controller.registerBuiltInFuncs()
 	return controller
-}
-
-func (this *Controller) Prompt() bool {
-	return this.prompt.Get()
-}
-
-func (this *Controller) SetPrompt(prompt bool) {
-	this.prompt.Set(prompt)
 }
 
 func (this *Controller) Register(fn interface{}, name, desc string) error {
@@ -54,13 +41,6 @@ func (this *Controller) MustRegister(fn interface{}, name, desc string) {
 	if err := this.register(fn, name, desc); err != nil {
 		panic(errFunc("MustRegister")(err))
 	}
-}
-
-func (this *Controller) Serve(rw io.ReadWriter) error {
-	if err := this.serve(rw); err != nil {
-		return errFunc("Serve")(err)
-	}
-	return nil
 }
 
 func (this *Controller) register(fn interface{}, name, desc string) error {
@@ -93,28 +73,6 @@ func (this *Controller) register(fn interface{}, name, desc string) error {
 	this.funcMap[name] = meta
 
 	return nil
-}
-
-func (this *Controller) serve(rw io.ReadWriter) error {
-	if this.prompt.Get() {
-		printPrompt(rw)
-	}
-
-	scanner := bufio.NewScanner(rw)
-	for scanner.Scan() {
-		input := strings.TrimSpace(scanner.Text())
-		if input == "" {
-			continue
-		}
-
-		this.rwlock.RLock()
-
-		handleFuncCall(rw, input, this.funcMap)
-
-		this.rwlock.RUnlock()
-	}
-
-	return scanner.Err()
 }
 
 func makeFuncMeta(fn interface{}, name, desc string) (*funcMeta, error) {

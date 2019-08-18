@@ -7,15 +7,7 @@ import (
 var defaultController *Controller
 
 func init() {
-	defaultController = New(true)
-}
-
-func Prompt() bool {
-	return defaultController.Prompt()
-}
-
-func SetPrompt(prompt bool) {
-	defaultController.SetPrompt(prompt)
+	defaultController = New()
 }
 
 func Register(fn interface{}, name, desc string) error {
@@ -26,10 +18,10 @@ func MustRegister(fn interface{}, name, desc string) {
 	defaultController.MustRegister(fn, name, desc)
 }
 
-func Serve(rw io.ReadWriter) error {
-	return defaultController.Serve(rw)
+func Serve(rw io.ReadWriter, config ServeConfig) error {
+	return defaultController.Serve(rw, config)
 }
 
-func ServeUnix(path string) error {
-	return defaultController.ServeUnix(path)
+func ServeUnix(path string, config ServeUnixConfig) error {
+	return defaultController.ServeUnix(path, config)
 }
