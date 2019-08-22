@@ -114,7 +114,7 @@ func parseBool(text string) (bool, error) {
 	case "false":
 		return false, nil
 	default:
-		return false, fmt.Errorf("'%s' is not a bool literal")
+		return false, fmt.Errorf("'%s' is not a bool literal", text)
 	}
 }
 

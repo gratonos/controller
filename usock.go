@@ -17,10 +17,7 @@ type ServeUnixConfig struct {
 
 func (this *Controller) ServeUnix(path string, config ServeUnixConfig) error {
 	errFn := errFunc("ServeUnix")
-	serveConfig := ServeConfig{
-		NoPrompt:   config.NoPrompt,
-		NoColoring: config.NoColoring,
-	}
+	serveConfig := ServeConfig(config)
 
 	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
 		return errFn(err)
