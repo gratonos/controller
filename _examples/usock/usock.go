@@ -1,7 +1,7 @@
 package main
 
 import (
-	ctrl "github.com/gratonos/controller"
+	"github.com/gratonos/gctrl"
 )
 
 func test() int {
@@ -9,6 +9,6 @@ func test() int {
 }
 
 func main() {
-	ctrl.MustRegister(test, "test", "test with unix domain socket")
-	ctrl.ServeUnix("/tmp/controller", ctrl.ServeUnixConfig{})
+	gctrl.MustRegister(test, "test", "test with unix domain socket")
+	gctrl.ServeUnix("/tmp/gctrl", gctrl.ServeUnixConfig{})
 }

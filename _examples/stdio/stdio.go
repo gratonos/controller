@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	ctrl "github.com/gratonos/controller"
+	"github.com/gratonos/gctrl"
 )
 
 func init() {
@@ -101,31 +101,31 @@ func randError() (int, error) {
 }
 
 func main() {
-	ctrl.MustRegister(void, "void", "do nothing")
+	gctrl.MustRegister(void, "void", "do nothing")
 
-	ctrl.MustRegister(and, "and", "logic AND")
+	gctrl.MustRegister(and, "and", "logic AND")
 
-	ctrl.MustRegister(addi, "addi", "sum two ints")
-	ctrl.MustRegister(addi8, "addi8", "sum two int8s")
-	ctrl.MustRegister(addi16, "addi16", "sum two int16s")
-	ctrl.MustRegister(addi32, "addi32", "sum two int32s")
-	ctrl.MustRegister(addi64, "addi64", "sum two int64s")
+	gctrl.MustRegister(addi, "addi", "sum two ints")
+	gctrl.MustRegister(addi8, "addi8", "sum two int8s")
+	gctrl.MustRegister(addi16, "addi16", "sum two int16s")
+	gctrl.MustRegister(addi32, "addi32", "sum two int32s")
+	gctrl.MustRegister(addi64, "addi64", "sum two int64s")
 
-	ctrl.MustRegister(addu, "addu", "sum two uints")
-	ctrl.MustRegister(addu8, "addu8", "sum two uint8s")
-	ctrl.MustRegister(addu16, "addu16", "sum two uint16s")
-	ctrl.MustRegister(addu32, "addu32", "sum two uint32s")
-	ctrl.MustRegister(addu64, "addu64", "sum two uint64s")
+	gctrl.MustRegister(addu, "addu", "sum two uints")
+	gctrl.MustRegister(addu8, "addu8", "sum two uint8s")
+	gctrl.MustRegister(addu16, "addu16", "sum two uint16s")
+	gctrl.MustRegister(addu32, "addu32", "sum two uint32s")
+	gctrl.MustRegister(addu64, "addu64", "sum two uint64s")
 
-	ctrl.MustRegister(addf32, "addf32", "sum two float32s")
-	ctrl.MustRegister(addf64, "addf64", "sum two float64s")
+	gctrl.MustRegister(addf32, "addf32", "sum two float32s")
+	gctrl.MustRegister(addf64, "addf64", "sum two float64s")
 
-	ctrl.MustRegister(concat, "concat", "concatenate two strings")
+	gctrl.MustRegister(concat, "concat", "concatenate two strings")
 
-	ctrl.MustRegister(makeCoord, "makeCoord", "make a coordinate")
-	ctrl.MustRegister(alias, "alias", "alias of ID")
+	gctrl.MustRegister(makeCoord, "makeCoord", "make a coordinate")
+	gctrl.MustRegister(alias, "alias", "alias of ID")
 
-	ctrl.MustRegister(randError, "randError", "rand of error")
+	gctrl.MustRegister(randError, "randError", "rand of error")
 
-	ctrl.Serve(ctrl.Stdio(), ctrl.ServeConfig{})
+	gctrl.Serve(gctrl.Stdio(), gctrl.ServeConfig{})
 }

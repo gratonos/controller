@@ -1,4 +1,4 @@
-package controller
+package gctrl
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 func errFunc(name string) func(interface{}) error {
 	return func(err interface{}) error {
-		return fmt.Errorf("controller.%s: %v", name, err)
+		return fmt.Errorf("gctrl.%s: %v", name, err)
 	}
 }
 
