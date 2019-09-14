@@ -19,24 +19,24 @@ const (
 	white
 )
 
-type output struct {
+type printer struct {
 	Writer   io.Writer
 	Coloring bool
 }
 
-func (this *output) Normal(format string, args ...interface{}) {
-	this.output(green, format, args...)
+func (this *printer) Normal(format string, args ...interface{}) {
+	this.write(green, format, args...)
 }
 
-func (this *output) Error(format string, args ...interface{}) {
-	this.output(red, format, args...)
+func (this *printer) Error(format string, args ...interface{}) {
+	this.write(red, format, args...)
 }
 
-func (this *output) Prompt() {
+func (this *printer) Prompt() {
 	this.Normal("%s", `type '_list("")' to show registered function list`)
 }
 
-func (this *output) CallResult(results []reflect.Value) {
+func (this *printer) Result(results []reflect.Value) {
 	if len(results) == 0 {
 		this.Normal("%s", "<void>")
 		return
@@ -58,7 +58,7 @@ func (this *output) CallResult(results []reflect.Value) {
 	}
 }
 
-func (this *output) output(color colorID, format string, args ...interface{}) {
+func (this *printer) write(color colorID, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	if this.Coloring {
 		fmt.Fprintln(this.Writer, colorize(msg, color))

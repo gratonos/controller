@@ -127,5 +127,7 @@ func main() {
 
 	gctrl.MustRegister(randError, "randError", "rand of error")
 
-	gctrl.Serve(gctrl.Stdio(), gctrl.ServeConfig{})
+	if err := gctrl.Serve(gctrl.Stdio(), gctrl.ServeConfig{}); err != nil {
+		panic("gctrl.Serve: " + err.Error())
+	}
 }

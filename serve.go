@@ -3,51 +3,64 @@ package gctrl
 import (
 	"bufio"
 	"io"
+	"reflect"
 	"strings"
 )
+
+type BeforeCall func(literal string)
+type AfterCall func(results []reflect.Value, err error)
 
 type ServeConfig struct {
 	NoPrompt   bool
 	NoColoring bool
+	BeforeCall BeforeCall
+	AfterCall  AfterCall
 }
 
 func (this *Controller) Serve(rw io.ReadWriter, config ServeConfig) error {
-	if err := this.serve(rw, config); err != nil {
+	if err := this.serve(rw, &config); err != nil {
 		return errFunc("Serve")(err)
 	}
 	return nil
 }
 
-func (this *Controller) serve(rw io.ReadWriter, config ServeConfig) error {
-	output := &output{
+func (this *Controller) serve(rw io.ReadWriter, config *ServeConfig) error {
+	printer := &printer{
 		Writer:   rw,
 		Coloring: !config.NoColoring,
 	}
 
 	if !config.NoPrompt {
-		output.Prompt()
+		printer.Prompt()
 	}
 
 	scanner := bufio.NewScanner(rw)
 	for scanner.Scan() {
 		input := strings.TrimSpace(scanner.Text())
 		if input != "" {
-			this.doCall(input, output)
+			if config.BeforeCall != nil {
+				config.BeforeCall(input)
+			}
+
+			results, err := this.doCall(input)
+			if err != nil {
+				printer.Error("%v", err)
+			} else {
+				printer.Result(results)
+			}
+
+			if config.AfterCall != nil {
+				config.AfterCall(results, err)
+			}
 		}
 	}
 
 	return scanner.Err()
 }
 
-func (this *Controller) doCall(literal string, output *output) {
+func (this *Controller) doCall(literal string) ([]reflect.Value, error) {
 	this.rwlock.RLock()
 	defer this.rwlock.RUnlock()
 
-	results, err := call(literal, this.funcMap)
-	if err != nil {
-		output.Error("%v", err)
-		return
-	}
-
-	output.CallResult(results)
+	return call(literal, this.funcMap)
 }
